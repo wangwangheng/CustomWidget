@@ -1,3 +1,3 @@
 # RoundRectLayout
 
-![](./round-rect-layout.png)
+![](round-rect-layout.png)
