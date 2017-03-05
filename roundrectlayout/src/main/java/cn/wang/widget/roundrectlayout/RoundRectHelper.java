@@ -85,7 +85,7 @@ public class RoundRectHelper {
      * @return 蒙版Bitmap
      */
     private Bitmap getMaskBitmap(){
-        if(mMaskBitmap != null){
+        if(mMaskBitmap != null && !mMaskBitmap.isRecycled()){
             return mMaskBitmap;
         }
 
@@ -116,7 +116,7 @@ public class RoundRectHelper {
             mBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         }
 
-        if(mBackgroundBitmap == null) {
+        if(mBackgroundBitmap == null || mBackgroundBitmap.isRecycled()) {
             mBackgroundDrawable.setBounds(0, 0, mTargetView.getWidth(), mTargetView.getHeight());
             mBackgroundBitmap = Bitmap.createBitmap(mTargetView.getWidth(),
                     mTargetView.getHeight(),
@@ -131,7 +131,6 @@ public class RoundRectHelper {
     public void startRoundRect(Canvas canvas){
         canvas.saveLayer(getMaskRect(),mLayerPaint,Canvas.ALL_SAVE_FLAG);
         drawBackground(canvas);
-
     }
 
     public void completedRoundRect(Canvas canvas){
