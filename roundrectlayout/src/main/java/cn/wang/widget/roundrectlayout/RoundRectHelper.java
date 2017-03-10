@@ -69,12 +69,18 @@ public class RoundRectHelper {
         mLayerPaint.setXfermode(null);
     }
 
+    private int mOldWidth,mOldHeight;
+
+    private boolean isSizeChanged(){
+        return mOldWidth != mTargetView.getWidth() || mOldHeight != mTargetView.getHeight();
+    }
+
     /**
      * 得到蒙版RectF
      * @return 蒙版Rect
      */
     private RectF getMaskRect(){
-        if(mMaskRect == null){
+        if(mMaskRect == null || isSizeChanged()){
             mMaskRect = new RectF(0, 0, mTargetView.getWidth(), mTargetView.getHeight());
         }
         return mMaskRect;
@@ -85,7 +91,7 @@ public class RoundRectHelper {
      * @return 蒙版Bitmap
      */
     private Bitmap getMaskBitmap(){
-        if(mMaskBitmap != null && !mMaskBitmap.isRecycled()){
+        if(mMaskBitmap != null && !mMaskBitmap.isRecycled() || isSizeChanged()){
             return mMaskBitmap;
         }
 
@@ -116,7 +122,7 @@ public class RoundRectHelper {
             mBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         }
 
-        if(mBackgroundBitmap == null || mBackgroundBitmap.isRecycled()) {
+        if(mBackgroundBitmap == null || mBackgroundBitmap.isRecycled() || isSizeChanged()) {
             mBackgroundDrawable.setBounds(0, 0, mTargetView.getWidth(), mTargetView.getHeight());
             mBackgroundBitmap = Bitmap.createBitmap(mTargetView.getWidth(),
                     mTargetView.getHeight(),
@@ -140,6 +146,9 @@ public class RoundRectHelper {
         mMaskPaint.setXfermode(null);
 
         canvas.restore();
+
+        mOldWidth = mTargetView.getWidth();
+        mOldHeight = mTargetView.getHeight();
     }
 
     public Drawable getBackground() {
