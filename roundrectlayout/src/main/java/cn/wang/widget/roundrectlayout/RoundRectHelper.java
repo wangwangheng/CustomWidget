@@ -12,7 +12,6 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewGroup;
 
 /**
  * 圆角帮助类
@@ -21,7 +20,7 @@ import android.view.ViewGroup;
  */
 public class RoundRectHelper {
 
-    private ViewGroup mTargetView;
+    private View mTargetView;
     private Paint mLayerPaint;
     private int mRadius = 0;
 
@@ -35,7 +34,7 @@ public class RoundRectHelper {
     private Paint mBackgroundPaint;
 
 
-    public RoundRectHelper(Context context, AttributeSet attrs, ViewGroup targetView) {
+    public RoundRectHelper(Context context, AttributeSet attrs, View targetView) {
 
         if(context == null){
             throw new IllegalArgumentException("context cannot equals null");
