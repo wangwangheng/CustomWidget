@@ -2,6 +2,6 @@
 <resources>
     <declare-styleable name="RoundRectLayout">
         <attr name="roundRectRadius" format="dimension"/>
-        <attr name="roundRectBackground" format="reference|color"/>
+        <attr name="roundRectBackground" format="color"/>
     </declare-styleable>
 </resources>

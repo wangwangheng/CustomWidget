@@ -2,16 +2,16 @@ package cn.wang.widget.roundrectlayout;
 
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 
 /**
  * 圆角帮助类
@@ -20,21 +20,20 @@ import android.view.View;
  */
 public class RoundRectHelper {
 
-    private View mTargetView;
+    private ViewGroup mTargetView;
     private Paint mLayerPaint;
     private int mRadius = 0;
 
-    private Bitmap mMaskBitmap = null;
     private Paint mMaskPaint;
     private RectF mMaskRect = null;
     private PorterDuffXfermode mMode;
 
-    private Drawable mBackgroundDrawable;
-    private Bitmap mBackgroundBitmap;
-    private Paint mBackgroundPaint;
+    private int mBackgroundColor = Color.WHITE;
 
+    // 圆角Path
+    private Path mRoundRectCornerPath;
 
-    public RoundRectHelper(Context context, AttributeSet attrs, View targetView) {
+    public RoundRectHelper(Context context, AttributeSet attrs, ViewGroup targetView) {
 
         if(context == null){
             throw new IllegalArgumentException("context cannot equals null");
@@ -49,112 +48,108 @@ public class RoundRectHelper {
             TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.RoundRectLayout);
 
             mRadius = ta.getDimensionPixelOffset(R.styleable.RoundRectLayout_roundRectRadius,0);
-            mBackgroundDrawable = ta.getDrawable(R.styleable.RoundRectLayout_roundRectBackground);
+            mBackgroundColor = ta.getColor(R.styleable.RoundRectLayout_roundRectBackground,Color.WHITE);
 
             ta.recycle();
         }
 
         mTargetView = targetView;
 
-        mTargetView.setWillNotDraw(false);
         mTargetView.setLayerType(View.LAYER_TYPE_SOFTWARE,null);
 
         mMaskPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mMaskPaint.setStyle(Paint.Style.FILL);
         mMaskPaint.setColor(Color.WHITE);
-        mMode = new PorterDuffXfermode(PorterDuff.Mode.DST_IN);
+        mMode = new PorterDuffXfermode(PorterDuff.Mode.DST_OUT);
 
         mLayerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mLayerPaint.setXfermode(null);
     }
 
-    private int mOldWidth,mOldHeight;
-
-    private boolean isSizeChanged(){
-        return mOldWidth != mTargetView.getWidth() || mOldHeight != mTargetView.getHeight();
-    }
+    private int mOldTargetWidth;
+    private int mOldTargetHeight;
 
     /**
      * 得到蒙版RectF
      * @return 蒙版Rect
      */
     private RectF getMaskRect(){
-        if(mMaskRect == null || isSizeChanged()){
+
+        if(mMaskRect == null || isTargetViewSizeChanged()){
             mMaskRect = new RectF(0, 0, mTargetView.getWidth(), mTargetView.getHeight());
         }
         return mMaskRect;
     }
 
     /**
-     * 得到蒙版Bitmap
-     * @return 蒙版Bitmap
+     * TargetView的大小是否发生了改变
+     * @return TargetView的大小是否发生了改变
      */
-    private Bitmap getMaskBitmap(){
-        if(mMaskBitmap != null && !mMaskBitmap.isRecycled() || isSizeChanged()){
-            return mMaskBitmap;
-        }
-
-        RectF rectF = getMaskRect();
-
-        mMaskBitmap = Bitmap.createBitmap(mTargetView.getWidth(),
-                mTargetView.getHeight(), Bitmap.Config.ARGB_8888);
-
-        Canvas c = new Canvas(mMaskBitmap);
-
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.WHITE);
-
-        c.drawRoundRect(rectF,mRadius,mRadius,paint);
-
-        return mMaskBitmap;
-
-    }
-
-    private void drawBackground(Canvas canvas){
-        if(mBackgroundDrawable == null){
-            mBackgroundBitmap = null;
-            return;
-        }
-
-        if(mBackgroundPaint == null) {
-            mBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        }
-
-        if(mBackgroundBitmap == null || mBackgroundBitmap.isRecycled() || isSizeChanged()) {
-            mBackgroundDrawable.setBounds(0, 0, mTargetView.getWidth(), mTargetView.getHeight());
-            mBackgroundBitmap = Bitmap.createBitmap(mTargetView.getWidth(),
-                    mTargetView.getHeight(),
-                    Bitmap.Config.ARGB_8888);
-
-            Canvas c = new Canvas(mBackgroundBitmap);
-            mBackgroundDrawable.draw(c);
-        }
-        canvas.drawBitmap(mBackgroundBitmap,0,0,mBackgroundPaint);
+    private boolean isTargetViewSizeChanged(){
+        return mTargetView.getWidth() != mOldTargetWidth || mTargetView.getHeight() != mOldTargetHeight;
     }
 
     public void startRoundRect(Canvas canvas){
         canvas.saveLayer(getMaskRect(),mLayerPaint,Canvas.ALL_SAVE_FLAG);
-        drawBackground(canvas);
+        canvas.drawColor(mBackgroundColor);
     }
+
 
     public void completedRoundRect(Canvas canvas){
 
         mMaskPaint.setXfermode(mMode);
-        canvas.drawBitmap(getMaskBitmap(),0,0, mMaskPaint);
+
+        drawRoundRectCorner(canvas);
+
         mMaskPaint.setXfermode(null);
 
         canvas.restore();
 
-        mOldWidth = mTargetView.getWidth();
-        mOldHeight = mTargetView.getHeight();
+        mOldTargetWidth = mTargetView.getWidth();
+        mOldTargetHeight = mTargetView.getHeight();
     }
 
-    public Drawable getBackground() {
-        return mBackgroundDrawable;
-    }
+    /**
+     * 绘制圆角
+     * @param canvas canvas
+     */
+    private void drawRoundRectCorner(Canvas canvas) {
+        if(mRoundRectCornerPath == null && mRadius > 0){
+            mRoundRectCornerPath = new Path();
+            mRoundRectCornerPath.moveTo(0, mRadius);
+            mRoundRectCornerPath.lineTo(0, 0);
+            mRoundRectCornerPath.lineTo(mRadius, 0);
+            mRoundRectCornerPath.arcTo(new RectF(0, 0, mRadius * 2, mRadius * 2),
+                    -90, -90);
+            mRoundRectCornerPath.close();
+        }
 
-    public void setBackground(Drawable drawable){
-        this.mBackgroundDrawable = drawable;
+        if(mRoundRectCornerPath != null){
+
+            // 左上角
+            canvas.drawPath(mRoundRectCornerPath, mMaskPaint);
+
+            // 右上角
+            canvas.save();
+            canvas.translate(mTargetView.getWidth(),0);
+            canvas.scale(-1,1);
+            canvas.drawPath(mRoundRectCornerPath,mMaskPaint);
+            canvas.restore();
+
+            // 左下角
+            canvas.save();
+            canvas.translate(0,mTargetView.getHeight());
+            canvas.scale(1,-1);
+            canvas.drawPath(mRoundRectCornerPath,mMaskPaint);
+            canvas.restore();
+
+            // 右下角
+            canvas.save();
+            canvas.translate(mTargetView.getWidth(),mTargetView.getHeight());
+            canvas.scale(-1,-1);
+            canvas.drawPath(mRoundRectCornerPath,mMaskPaint);
+            canvas.restore();
+
+        }
     }
 }

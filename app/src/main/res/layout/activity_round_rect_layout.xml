@@ -14,7 +14,7 @@
     <cn.wang.widget.roundrectlayout.RoundRectLinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:roundRectRadius="10dp"
+        app:roundRectRadius="0dp"
         app:roundRectBackground="#FFDD99FF"
         android:orientation="vertical"
         android:layout_gravity="center">
